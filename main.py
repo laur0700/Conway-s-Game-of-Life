@@ -4,7 +4,7 @@ from pygame.constants import K_ESCAPE, KEYDOWN, QUIT, K_q
 
 BLACK = (0, 0, 0)
 WHITE = (220, 220, 220)
-SIZE = 2
+SIZE = 4
 WIDTH = 900
 HEIGHT = 900
 GRID_WIDTH = WIDTH // SIZE
@@ -28,46 +28,38 @@ class Game:
 
         self.run()
 
-    def generate_initial_state(self, r_pentomino=False):
-        if r_pentomino == False:
-            for x in range(GRID_HEIGHT):
-                for y in range(GRID_WIDTH):
-                    if self.cells[x][y] == 1:
-                        self.set_live_count(x, y)
-                        pygame.draw.rect(self.surface, WHITE, (y*SIZE, x*SIZE, SIZE, SIZE))
-        else:
-            pos_x = GRID_HEIGHT//2
-            pos_y = GRID_WIDTH//2
-            self.cells[pos_x][pos_y] = 1
-            self.cells[pos_x][pos_y-1] = 1
-            self.cells[pos_x+1][pos_y] = 1
-            self.cells[pos_x-1][pos_y] = 1
-            self.cells[pos_x-1][pos_y+1] = 1
+    def generate_initial_state(self):
+        for x in range(GRID_HEIGHT):
+            for y in range(GRID_WIDTH):
+                if self.cells[x][y] == 1:
+                    self.set_live_count(x, y, 1)
+                    pygame.draw.rect(self.surface, WHITE, (y*SIZE, x*SIZE, SIZE, SIZE))
             
         pygame.display.flip()
 
-    def set_live_count(self, x, y):
+    def set_live_count(self, x, y, amount):
             for i in range(8):
                 new_x = (x + self.neighbors[i][0]) % GRID_HEIGHT
                 new_y = (y + self.neighbors[i][1]) % GRID_WIDTH
-                self.alive_neighbors[new_x][new_y] += 1
+                self.alive_neighbors[new_x][new_y] += amount
 
     def draw_cells(self):
-        self.alive_neighbors = [[0 for x in range(GRID_WIDTH)]for x in range(GRID_HEIGHT)]
-
         for x in range(GRID_HEIGHT):
             for y in range(GRID_WIDTH):
                 if self.cells_copy[x][y] == 0 and self.cells[x][y] == 0:
                     continue
 
                 if self.cells_copy[x][y] == 1 and self.cells[x][y] == 1:
-                    self.set_live_count(x, y)
-                elif self.cells_copy[x][y] == 1 and self.cells[x][y] == 0:
+                    continue
+
+                if self.cells_copy[x][y] == 1 and self.cells[x][y] == 0:
                     self.cells[x][y] = 1
-                    self.set_live_count(x, y)
+                    self.set_live_count(x, y, 1)
                     pygame.draw.rect(self.surface, WHITE, (y*SIZE, x*SIZE, SIZE, SIZE))
+
                 elif self.cells_copy[x][y] == 0 and self.cells[x][y] == 1:
                     self.cells[x][y] = 0
+                    self.set_live_count(x, y, -1)
                     pygame.draw.rect(self.surface, BLACK, (y*SIZE, x*SIZE, SIZE, SIZE))
 
         pygame.display.flip()
@@ -86,15 +78,24 @@ class Game:
                 elif self.cells[x][y] == 0 and self.alive_neighbors[x][y] == 3:
                     self.cells_copy[x][y] = 1
 
-    def play(self):
-        self.game_logic()
-        self.draw_cells()
+    def play(self, reset=False):
+        if reset == True:
+            self.reset()
+        else:
+            self.game_logic()
+            self.draw_cells()
         
+    def reset(self):
+        self.cells = [[random.randint(0, 1) for x in range(GRID_WIDTH)]for x in range(GRID_HEIGHT)]
+        self.alive_neighbors = [[0 for x in range(GRID_WIDTH)]for x in range(GRID_HEIGHT)]
+        self.surface.fill(self.surface_color)
+        self.generate_initial_state()
+
     def run(self):
         clock = pygame.time.Clock()
         running = True
         reset = False
-        performance = []
+        #performance = []
         
         while running:
             for event in pygame.event.get():
@@ -108,14 +109,12 @@ class Game:
 
             if reset == False:
                 self.play()
-                clock.tick(30)
+                clock.tick(15)
                 #performance.append(round(clock.get_fps(), 2))
             else:
-                self.generate_initial_state()
+                self.play(reset)
                 reset = False
             
-            
-
         #average = sum(performance)/len(performance)
 
         #print(f"FPS average: {average} | from {len(performance)} samples.")
