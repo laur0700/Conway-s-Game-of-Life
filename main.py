@@ -4,7 +4,7 @@ from pygame.constants import K_ESCAPE, KEYDOWN, QUIT, K_q
 
 BLACK = (0, 0, 0)
 WHITE = (220, 220, 220)
-SIZE = 4
+SIZE = 2
 WIDTH = 900
 HEIGHT = 900
 GRID_WIDTH = WIDTH // SIZE
@@ -21,7 +21,7 @@ class Game:
 
         self.cells = [[random.randint(0, 1) for x in range(GRID_WIDTH)]for x in range(GRID_HEIGHT)]
         self.alive_neighbors = [[0 for x in range(GRID_WIDTH)]for x in range(GRID_HEIGHT)]
-        self.cells_copy = []
+        self.cells_copy = [[0 for x in range(GRID_WIDTH)]for x in range(GRID_HEIGHT)]
         self.neighbors = ((-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1))
         
         self.generate_initial_state()
@@ -55,18 +55,18 @@ class Game:
                 if self.cells_copy[x][y] == 1 and self.cells[x][y] == 0:
                     self.cells[x][y] = 1
                     self.set_live_count(x, y, 1)
+
                     pygame.draw.rect(self.surface, WHITE, (y*SIZE, x*SIZE, SIZE, SIZE))
 
                 elif self.cells_copy[x][y] == 0 and self.cells[x][y] == 1:
                     self.cells[x][y] = 0
                     self.set_live_count(x, y, -1)
+
                     pygame.draw.rect(self.surface, BLACK, (y*SIZE, x*SIZE, SIZE, SIZE))
 
         pygame.display.flip()
 
     def game_logic(self):
-        self.cells_copy = [[0 for x in range(GRID_WIDTH)]for x in range(GRID_HEIGHT)]
-
         for x in range(GRID_HEIGHT):
             for y in range(GRID_WIDTH):
                 if self.cells[x][y] == 0 and self.alive_neighbors[x][y] == 0:
@@ -78,6 +78,9 @@ class Game:
                 elif self.cells[x][y] == 0 and self.alive_neighbors[x][y] == 3:
                     self.cells_copy[x][y] = 1
 
+                else:
+                    self.cells_copy[x][y] = 0
+
     def play(self, reset=False):
         if reset == True:
             self.reset()
@@ -87,6 +90,7 @@ class Game:
         
     def reset(self):
         self.cells = [[random.randint(0, 1) for x in range(GRID_WIDTH)]for x in range(GRID_HEIGHT)]
+        self.cells_copy = [[0 for x in range(GRID_WIDTH)]for x in range(GRID_HEIGHT)]
         self.alive_neighbors = [[0 for x in range(GRID_WIDTH)]for x in range(GRID_HEIGHT)]
         self.surface.fill(self.surface_color)
         self.generate_initial_state()
